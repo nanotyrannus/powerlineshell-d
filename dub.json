@@ -1,0 +1,9 @@
+{
+	"name": "powerlineshell-d",
+	"authors": [
+		"Ryan Joseph constantino"
+	],
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2017, Ryan Joseph constantino",
+	"license": "proprietary"
+}
