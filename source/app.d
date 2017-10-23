@@ -11,10 +11,6 @@ enum int[string] config = [
         : 81, "fg_3" : 0, "fg_home" : 254
     ];
 
-struct Foo {
-    int function(int) f;
-}
-
 string colorSequence(int fg, int bg)
 {
     return `\[\033[38;5;%s;48;5;%sm\]`.format(fg, bg);
