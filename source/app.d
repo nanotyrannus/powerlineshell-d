@@ -15,8 +15,8 @@ struct Segment
     string text;
     string colorControl;
     string point;
-    long fg;
-    long bg;
+    long fg = 7;
+    long bg = 0;
     string toString()
     {
         if (text.length > 0)
@@ -81,6 +81,7 @@ void main(string[] args)
             }
         }),segment!((out Segment s) {
             // path
+            enum thin = config["symbols"]["thin_separator"].str;
             s.fg = config["fg_1"].integer;
             s.bg = config["bg_1"].integer;
             auto pwd = executeShell("pwd");
@@ -91,13 +92,13 @@ void main(string[] args)
                     result = dirText
                                 .strip()
                                 .split(`/`)[3..$]
-                                .join(` %s `.format(thinSeparator));
+                                .join(` %s `.format(thin));
                 } else {
                     result = dirText
                                 .strip()
                                 .split(`/`)
                                 .filter!(s => s.length > 0)
-                                .join(` %s `.format(thinSeparator));
+                                .join(` %s `.format(thin));
                 }
             } else {
                 result = `error`;
@@ -109,6 +110,28 @@ void main(string[] args)
         //     s.bg = config["bg_2"].integer;
         //     return `git`;
         // })
+        segment!((out Segment s) {
+            import std.regex;
+
+            auto describe = executeShell(`git status --porcelain -b`);
+            if (describe.status != 0) {
+                return ``;
+            }
+            auto status = describe.output.splitLines;
+            auto branchRegex = regex(r"^## (?P<local>\S+?)''(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
+            auto branchInfo = status[0].matchAll(branchRegex);
+            // status.join(" ").writeln();
+            string result;
+            // foreach (i; 1..status.length) {
+            //     result ~= status[i];
+            // }
+            return ``;
+        }),
+        segment!((out Segment s) {
+            s.fg = config["fg_term"].integer;
+            s.bg = config["bg_term"].integer;
+            return `$`;
+        })
     ];
 
     segments = filter!(s => s.text.length > 0)(segments).array();

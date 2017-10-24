@@ -1,0 +1,25 @@
+{
+    "bg_1": 255,
+    "bg_2": 0,
+    "bg_3": 0,
+    "bg_term": 237,
+    "bg_home": 33,
+    "fg_term": 253,
+    "fg_1": 246,
+    "fg_2": 81,
+    "fg_3": 0,
+    "fg_home": 251,
+    "symbols": {
+        "separator": "",
+        "thin_separator": "",
+        "git": {
+            "detached": "detached",
+            "ahead": "ahead",
+            "behind": "behind",
+            "staged": "staged",
+            "changed": "changed",
+            "new": "new",
+            "conflicted": "conflicted"
+        }
+    }
+}
