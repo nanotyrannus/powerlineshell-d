@@ -7,7 +7,8 @@
 
 ## Requirements
 
-1. DUB and a D compiler (DMD or LDC).
+* DUB and a D compiler (DMD or LDC).
+* (Optional) If the glyphs are desired, the **patched fonts**. See the [original project](https://github.com/banga/powerline-shell) for instructions on installation.
 
 ## Steps
 
@@ -33,7 +34,7 @@ And replace `<link to out/app>` with the path to the link.
 
 The  `segments` array is the array of segments that are displayed on the prompt. The `segment` template is passed the instance of `Segment` that the user can interact with.
 
-```
+```d
 segment!((out Segment s) { 
             s.fg = config["fg_1"].integer;
             s.bg = config["bg_1"].integer;
@@ -41,7 +42,7 @@ segment!((out Segment s) {
 })
 ```
 
-In the above, the template `segment` takes one parameter, a delegate `action` of type `string function(out Segment)`. `action` is passed an instance of `segment`, `s`. Through this instance, the foreground and background colors are set through a config file although you can use any integer literals as long as they evaluate at compile time. The integers must be valid ANSI color codes. Any logic of the segment is placed in in the delegate body. The returned string is the text that is printed in the segment.
+In the above, the template `segment` takes one parameter, a delegate `action` of type `string function(out Segment)`. `action` is passed an instance of `segment`, `s`. Through this instance, the foreground and background colors are set through a config file although you can use any integer literals as long as they evaluate at compile time. The integers must be valid ANSI color codes, a reference of which is generated when `color_reference.sh` is run. Any logic of the segment is placed in in the delegate body. The returned string is the text that is printed in the segment.
 
 # Why?
 
@@ -49,5 +50,5 @@ Powerline shell relies on the Python VM to run. As a result it's slower than an 
 
 # To-do
 
-1. Multithread each segment so that they each execute at once.
-2. Finish implementing Git integration.
+* Run each segment in its own thread for faster execution.
+* Finish implementing Git integration.
