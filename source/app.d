@@ -82,6 +82,7 @@ void main(string[] args)
         }),segment!((out Segment s) {
             // path
             enum thin = config["symbols"]["thin_separator"].str;
+            enum maxCount =3;
             s.fg = config["fg_1"].integer;
             s.bg = config["bg_1"].integer;
             auto pwd = executeShell("pwd");
@@ -89,27 +90,30 @@ void main(string[] args)
             if (pwd.status == 0) {
                 auto dirText = pwd.output;
                 if (dirText.startsWith("/home/")) {
-                    result = dirText
+                    auto temp = dirText
                                 .strip()
-                                .split(`/`)[3..$]
-                                .join(` %s `.format(thin));
+                                .split(`/`)[3..$];
+                    if (temp.length > maxCount) {
+                        temp = "..." ~ temp[$-maxCount..$];
+                    }
+                    result = temp.join(` %s `.format(thin));
                 } else {
-                    result = dirText
+                    auto temp = dirText
                                 .strip()
                                 .split(`/`)
                                 .filter!(s => s.length > 0)
-                                .join(` %s `.format(thin));
+                                .array;          
+                    if (temp.length > maxCount) {
+                        temp = "..." ~ temp[$-maxCount..$];
+                    }
+                    result = temp.join(` %s `.format(thin));
                 }
+
             } else {
                 result = `error`;
             }
             return result;
         }), 
-        // segment!((out Segment s) {
-        //     s.fg = config["fg_2"].integer;
-        //     s.bg = config["bg_2"].integer;
-        //     return `git`;
-        // })
         segment!((out Segment s) {
             import std.regex;
 
@@ -118,14 +122,22 @@ void main(string[] args)
                 return ``;
             }
             auto status = describe.output.splitLines;
-            auto branchRegex = regex(r"^## (?P<local>\S+?)''(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
-            auto branchInfo = status[0].matchAll(branchRegex);
+            auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
+            // auto branchRegex = ctRegex!(r"^## (\S+?)''(\.{3}(\S+?)( \[(ahead (\d+)(, )?)?(behind (\d+))?\])?)?$");
+            auto binfo = status[0].matchFirst(branchRegex);
+            // status.writeln();
+            
+            // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
             // status.join(" ").writeln();
-            string result;
-            // foreach (i; 1..status.length) {
-            //     result ~= status[i];
-            // }
-            return ``;
+            if (binfo["behind"] != null) {
+                return binfo["behind"];
+            } else if (binfo["ahead"] != null) {
+                return binfo["ahead"];
+            } else {
+                s.fg = config["segments"]["git"]["fg_master"].integer;
+                s.bg = config["segments"]["git"]["bg_master"].integer;
+                return binfo["local"];
+            }
         }),
         segment!((out Segment s) {
             s.fg = config["fg_term"].integer;
