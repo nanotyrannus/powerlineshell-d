@@ -28,21 +28,23 @@ fi
 
 And replace `<link to out/app>` with the path to the link.
 
+# Configuration
 
+`config.json` contains all the settings, including text colors. For the changes to take effect, you must save any changes and rebuild the project via `dub build`.
 
 # Extending
 
-The  `segments` array is the array of segments that are displayed on the prompt. The `segment` template is passed the instance of `Segment` that the user can interact with.
+The  `segments` array is the array of segments that are displayed on the prompt. The `segment` template is passed the instance of `Segment` that the user can interact with. To add a new segment, you must add it to the `segments` array. The prompt is evaluated in the order that the segments appear in the array.
 
 ```d
 segment!((out Segment s) { 
-            s.fg = config["fg_1"].integer;
-            s.bg = config["bg_1"].integer;
-            return `\u`;
+    s.fg = config["fg_1"].integer;
+    s.bg = config["bg_1"].integer;
+    return `\u`;
 })
 ```
 
-In the above, the template `segment` takes one parameter, a delegate `action` of type `string function(out Segment)`. `action` is passed an instance of `segment`, `s`. Through this instance, the foreground and background colors are set through a config file although you can use any integer literals as long as they evaluate at compile time. The integers must be valid ANSI color codes, a reference of which is generated when `color_reference.sh` is run. Any logic of the segment is placed in in the delegate body. The returned string is the text that is printed in the segment.
+In the above, the template `segment` takes one parameter, a delegate `action` of type `string function(out Segment)`. `action` is passed an instance of `segment`, `s`. Through this instance, the foreground and background colors are set through a config file. The integers must be valid ANSI color codes, a reference of which is generated when `color_reference.sh` is run. Any logic of the segment is placed in in the delegate body. The returned string is the text that is printed in the segment.
 
 # Why?
 
