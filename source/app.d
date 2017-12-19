@@ -12,6 +12,7 @@ enum config = parseJSON(foo);
 
 struct Segment
 {
+    Segment[] children;
     string text;
     string colorControl;
     string point;
@@ -57,96 +58,101 @@ Segment segment(string function(out Segment s) action)()
 
 void main(string[] args)
 {
-    auto segments = [
-        segment!((out Segment s) { 
-            s.fg = config["fg_1"].integer;
-            s.bg = config["bg_1"].integer;
-            return `\u`;
-        }), segment!((out Segment s) {
-            s.fg = config["fg_2"].integer;
-            s.bg = config["bg_2"].integer;
-            return Socket.hostName;
-        }), segment!((out Segment s){
-            s.fg = config["fg_home"].integer;
-            s.bg = config["bg_home"].integer;
-            auto pwd = executeShell("pwd");
-            if (pwd.status == 0) {
-                if (pwd.output.startsWith("/home/")) {
-                    return `~`;
+    auto root = segment!((out Segment s) {
+            s.children = [
+            segment!((out Segment s) { 
+                s.fg = config["fg_1"].integer;
+                s.bg = config["bg_1"].integer;
+                return `\u`;
+            }), segment!((out Segment s) {
+                s.fg = config["fg_2"].integer;
+                s.bg = config["bg_2"].integer;
+                return Socket.hostName;
+            }), segment!((out Segment s){
+                s.fg = config["fg_home"].integer;
+                s.bg = config["bg_home"].integer;
+                auto pwd = executeShell("pwd");
+                if (pwd.status == 0) {
+                    if (pwd.output.startsWith("/home/")) {
+                        return `~`;
+                    } else {
+                        return ``;
+                    }
                 } else {
+                    return ` ERROR `;
+                }
+            }),segment!((out Segment s) {
+                // path
+                enum thin = config["symbols"]["thin_separator"].str;
+                enum maxCount =3;
+                s.fg = config["fg_1"].integer;
+                s.bg = config["bg_1"].integer;
+                auto pwd = executeShell("pwd");
+                string result;
+                if (pwd.status == 0) {
+                    auto dirText = pwd.output;
+                    if (dirText.startsWith("/home/")) {
+                        auto temp = dirText
+                                    .strip()
+                                    .split(`/`)[3..$];
+                        if (temp.length > maxCount) {
+                            temp = "..." ~ temp[$-maxCount..$];
+                        }
+                        result = temp.join(` %s `.format(thin));
+                    } else {
+                        auto temp = dirText
+                                    .strip()
+                                    .split(`/`)
+                                    .filter!(s => s.length > 0)
+                                    .array;          
+                        if (temp.length > maxCount) {
+                            temp = "..." ~ temp[$-maxCount..$];
+                        }
+                        result = temp.join(` %s `.format(thin));
+                    }
+
+                } else {
+                    result = `error`;
+                }
+                return result;
+            }), 
+            segment!((out Segment s) {
+                import std.regex;
+
+                auto describe = executeShell(`git status --porcelain -b`);
+                if (describe.status != 0) {
                     return ``;
                 }
-            } else {
-                return ` ERROR `;
-            }
-        }),segment!((out Segment s) {
-            // path
-            enum thin = config["symbols"]["thin_separator"].str;
-            enum maxCount =3;
-            s.fg = config["fg_1"].integer;
-            s.bg = config["bg_1"].integer;
-            auto pwd = executeShell("pwd");
-            string result;
-            if (pwd.status == 0) {
-                auto dirText = pwd.output;
-                if (dirText.startsWith("/home/")) {
-                    auto temp = dirText
-                                .strip()
-                                .split(`/`)[3..$];
-                    if (temp.length > maxCount) {
-                        temp = "..." ~ temp[$-maxCount..$];
-                    }
-                    result = temp.join(` %s `.format(thin));
-                } else {
-                    auto temp = dirText
-                                .strip()
-                                .split(`/`)
-                                .filter!(s => s.length > 0)
-                                .array;          
-                    if (temp.length > maxCount) {
-                        temp = "..." ~ temp[$-maxCount..$];
-                    }
-                    result = temp.join(` %s `.format(thin));
+                auto status = describe.output.splitLines;
+                auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
+                auto binfo = status[0].matchFirst(branchRegex);
+                
+                // // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
+                string result;
+                if (binfo["behind"] != null) {
+                    // s.children ~= segment!((out Segment s) {
+                    //     string text = "%s %s".format(binfo["behind"], config["segments"]["git"]["behind"].str);
+                    //     return "";
+                    // });
+                } else if (binfo["ahead"] != null) {
+                    // s.children ~= segment!((out Segment s){
+                    //     return "%s %s".format(binfo["ahead"], config["segments"]["git"]["behind"].str);
+                    // });
                 }
-
-            } else {
-                result = `error`;
-            }
-            return result;
-        }), 
-        segment!((out Segment s) {
-            import std.regex;
-
-            auto describe = executeShell(`git status --porcelain -b`);
-            if (describe.status != 0) {
-                return ``;
-            }
-            auto status = describe.output.splitLines;
-            auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
-            // auto branchRegex = ctRegex!(r"^## (\S+?)''(\.{3}(\S+?)( \[(ahead (\d+)(, )?)?(behind (\d+))?\])?)?$");
-            auto binfo = status[0].matchFirst(branchRegex);
-            // status.writeln();
-            
-            // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
-            // status.join(" ").writeln();
-            if (binfo["behind"] != null) {
-                return binfo["behind"];
-            } else if (binfo["ahead"] != null) {
-                return binfo["ahead"];
-            } else {
                 s.fg = config["segments"]["git"]["fg_master"].integer;
                 s.bg = config["segments"]["git"]["bg_master"].integer;
-                return binfo["local"];
-            }
-        }),
-        segment!((out Segment s) {
-            s.fg = config["fg_term"].integer;
-            s.bg = config["bg_term"].integer;
-            return `$`;
-        })
-    ];
+                return "%s".format(binfo["local"]);
+            }),
+            segment!((out Segment s) {
+                s.fg = config["fg_term"].integer;
+                s.bg = config["bg_term"].integer;
+                return `$`;
+            })
+        ];
+        return ``;
+    });
 
-    segments = filter!(s => s.text.length > 0)(segments).array();
+    auto segments = filter!(s => s.text.length > 0)(root.children).array();
 
     string result;
 
@@ -160,3 +166,11 @@ void main(string[] args)
 
     result.writeln();
 }
+
+// string expand(Segment[] segments) {
+//     string result;
+//     Segment cursor;
+//     while (segments.length > 0) {
+        
+//     }
+// }

@@ -15,20 +15,18 @@
         },
         "git" : {
             "fg_master": 253,
-            "bg_master": 35
+            "bg_master": 35,
+            "detached": "⚓",
+            "ahead": "⬆",
+            "behind": "⬇",
+            "staged": "✔",
+            "changed": "✎",
+            "new": "?",
+            "conflicted": "✼"
         }
     },
     "symbols": {
         "separator": "",
-        "thin_separator": "",
-        "git": {
-            "detached": "detached",
-            "ahead": "ahead",
-            "behind": "behind",
-            "staged": "staged",
-            "changed": "changed",
-            "new": "new",
-            "conflicted": "conflicted"
-        }
+        "thin_separator": ""
     }
 }
