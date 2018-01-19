@@ -58,6 +58,16 @@ Segment segment(string function(out Segment s) action)()
 
 void main(string[] args)
 {
+    auto test = segment!((out Segment s) {
+        s.children ~= segment!((out Segment s) {
+            s.children ~= segment!((out Segment s) {
+                return "";
+            });
+            return "";
+        });
+        return "";
+    });
+
     auto root = segment!((out Segment s) {
             s.children = [
             segment!((out Segment s) { 
@@ -123,26 +133,29 @@ void main(string[] args)
                 if (describe.status != 0) {
                     return ``;
                 }
+
                 auto status = describe.output.splitLines;
                 auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
                 auto binfo = status[0].matchFirst(branchRegex);
-                
-                // // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
+                if (binfo.length < 1) {
+                    // Calling 'local' parameter from binfo causes 'range violation' error
+                    // in a freshly initialized git repo for some reason. The other parameters
+                    // don't cause this error.
+                    return `init`;
+                }
                 string result;
                 if (binfo["behind"] != null) {
-                    // s.children ~= segment!((out Segment s) {
-                    //     string text = "%s %s".format(binfo["behind"], config["segments"]["git"]["behind"].str);
-                    //     return "";
-                    // });
+                    string text = "%s %s".format(binfo["behind"], config["segments"]["git"]["behind"].str);
+                    result ~= text;
                 } else if (binfo["ahead"] != null) {
-                    // s.children ~= segment!((out Segment s){
-                    //     return "%s %s".format(binfo["ahead"], config["segments"]["git"]["behind"].str);
-                    // });
+                    result ~= "%s %s".format(binfo["ahead"], config["segments"]["git"]["behind"].str);
+                } else if (binfo["remote"] != null) {
                 }
                 s.fg = config["segments"]["git"]["fg_master"].integer;
                 s.bg = config["segments"]["git"]["bg_master"].integer;
-                return "%s".format(binfo["local"]);
-            }),
+                result ~= `%s`.format(binfo["local"]);
+                return result;
+            }),           
             segment!((out Segment s) {
                 s.fg = config["fg_term"].integer;
                 s.bg = config["bg_term"].integer;
