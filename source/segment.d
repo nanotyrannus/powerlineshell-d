@@ -1,4 +1,4 @@
-module myApp.segment;
+module powerlineshell.segment;
 
 import std.string;
 

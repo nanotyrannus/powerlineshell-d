@@ -7,107 +7,30 @@ import std.socket;
 import std.json;
 import std.conv;
 
-enum string foo = import("config.json");
-enum config = parseJSON(foo);
+// enum string foo = import("config.json");
+// enum config = parseJSON(foo);
 
-import myApp.segment;
-import path;
+import powerlineshell.config;
+import powerlineshell.segment;
+import powerlineshell.path;
+import powerlineshell.git;
+import powerlineshell.user;
+import powerlineshell.hostname;
+import powerlineshell.prompt;
 
-immutable string separator = config["symbols"]["separator"].str;
+// immutable string separator = config["symbols"]["separator"].str;
 immutable string thinSeparator = "";
 
 void main(string[] args)
 {
     auto root = segment!((out Segment s) {
-            s.children = [
-            segment!((out Segment s) { 
-                s.fg = config["fg_1"].integer;
-                s.bg = config["bg_1"].integer;
-                return `\u`;
-            }), segment!((out Segment s) {
-                s.fg = config["fg_2"].integer;
-                s.bg = config["bg_2"].integer;
-                return Socket.hostName;
-            }), segment!((out Segment s){
-                s.fg = config["fg_home"].integer;
-                s.bg = config["bg_home"].integer;
-                auto pwd = executeShell("pwd");
-                if (pwd.status == 0) {
-                    if (pwd.output.startsWith("/home/")) {
-                        return `~`;
-                    } else {
-                        return ``;
-                    }
-                } else {
-                    return ` ERROR `;
-                }
-            }),segment!((out Segment s) {
-                // path
-                enum thin = config["symbols"]["thin_separator"].str;
-                enum maxCount =3;
-                s.fg = config["fg_1"].integer;
-                s.bg = config["bg_1"].integer;
-                auto pwd = executeShell("pwd");
-                string result;
-                if (pwd.status == 0) {
-                    auto dirText = pwd.output;
-                    if (dirText.startsWith("/home/")) {
-                        auto temp = dirText
-                                    .strip()
-                                    .split(`/`)[3..$];
-                        if (temp.length > maxCount) {
-                            temp = "..." ~ temp[$-maxCount..$];
-                        }
-                        result = temp.join(` %s `.format(thin));
-                    } else {
-                        auto temp = dirText
-                                    .strip()
-                                    .split(`/`)
-                                    .filter!(s => s.length > 0)
-                                    .array;          
-                        if (temp.length > maxCount) {
-                            temp = "..." ~ temp[$-maxCount..$];
-                        }
-                        result = temp.join(` %s `.format(thin));
-                    }
-
-                } else {
-                    result = `error`;
-                }
-                return result;
-            }), 
-            segment!((out Segment s) {
-                import std.regex;
-
-                auto describe = executeShell(`git status --porcelain -b`);
-                if (describe.status != 0) {
-                    return ``;
-                }
-                auto status = describe.output.splitLines;
-                auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)(\.{3}(?P<remote>\S+?)( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
-                auto binfo = status[0].matchFirst(branchRegex);
-                
-                // // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
-                string result;
-                if (binfo["behind"] != null) {
-                    // s.children ~= segment!((out Segment s) {
-                    //     string text = "%s %s".format(binfo["behind"], config["segments"]["git"]["behind"].str);
-                    //     return "";
-                    // });
-                } else if (binfo["ahead"] != null) {
-                    // s.children ~= segment!((out Segment s){
-                    //     return "%s %s".format(binfo["ahead"], config["segments"]["git"]["behind"].str);
-                    // });
-                }
-                s.fg = config["segments"]["git"]["fg_master"].integer;
-                s.bg = config["segments"]["git"]["bg_master"].integer;
-                return "%s".format(binfo["local"]);
-            }),
-            segment!((out Segment s) {
-                s.fg = config["fg_term"].integer;
-                s.bg = config["bg_term"].integer;
-                return `$`;
-            })
+        s.children = [
+            userSegment(),
+            hostnameSegment(), 
+            pathPrefixSegment(), 
+            pathSegment(), 
+            gitSegment(), 
+            promptEnd()
         ];
         return ``;
     });
@@ -116,13 +39,14 @@ void main(string[] args)
 
     string result;
 
-    for (int i = 0; i < segments.length - 1; i++) {
-        segments[i].point = colorSequence(segments[i].bg, segments[i+1].bg) ~ separator;
+    for (int i = 0; i < segments.length - 1; i++)
+    {
+        segments[i].point = colorSequence(segments[i].bg, segments[i + 1].bg) ~ separator;
         result ~= segments[i].toString();
     }
 
-    result ~= segments[$-1].toString();
-    result ~= reset ~ `\[\033[38;5;%sm\]%s`.format(segments[$-1].bg, separator) ~ reset ~ ` `;
+    result ~= segments[$ - 1].toString();
+    result ~= reset ~ `\[\033[38;5;%sm\]%s`.format(segments[$ - 1].bg, separator) ~ reset ~ ` `;
 
     result.writeln();
 }
@@ -131,6 +55,6 @@ void main(string[] args)
 //     string result;
 //     Segment cursor;
 //     while (segments.length > 0) {
-        
+
 //     }
 // }
