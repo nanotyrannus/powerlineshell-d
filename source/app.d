@@ -25,6 +25,7 @@ void main(string[] args)
 {
     auto root = segment!((out Segment s) {
         s.children = [
+            virtualEnvironmentSegment(),
             userSegment(),
             hostnameSegment(), 
             pathPrefixSegment(), 
