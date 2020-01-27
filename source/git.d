@@ -18,7 +18,7 @@ Segment gitSegment()
         auto status = describe.output.splitLines;
         // auto branchRegex = ctRegex!(r"^## (?P<local>\S+?)\s?(\.{3}(?P<remote>\S+?)|(?P<detached>\(.+\))( \[(ahead (?P<ahead>\d+)(, )?)?(behind (?P<behind>\d+))?\])?)?$");
         // Debugging regex https://regex101.com/r/c204WA/1/tests
-        auto branchRegex = ctRegex!(r"^## (?P<local>[\S ]+)(\.{3}(?P<remote>\S+)|\s(?P<detached>\([\S ]+\)))( (\[(?P<ahead>ahead\s\d+)?(, )?(?P<behind>behind\s\d+)?\]))?");
+        auto branchRegex = ctRegex!(r"^## (?P<local>[\S]+)((\.{3}(?P<remote>\S+)|\s(?P<detached>\([\S ]+\)))( (\[(?P<ahead>ahead\s\d+)?(, )?(?P<behind>behind\s\d+)?\]))?)?$");
         auto binfo = status[0].matchFirst(branchRegex);
 
         // // "local: %s, remote: %s, ahead: %s, behind: %s".format(binfo["local"], binfo["remote"], binfo["ahead"], binfo["behind"]).writeln();
